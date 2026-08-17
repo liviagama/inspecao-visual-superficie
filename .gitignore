@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# dados gerados em runtime, não versionados
+dados/sinteticas/*.png
+dados/ground_truth/*.json
+dados/modelo_ml.pkl
+saida/overlays/*.png
+saida/lote/*.csv
+saida/lote/*.md
+
+!dados/sinteticas/.gitkeep
+!dados/ground_truth/.gitkeep
+!saida/overlays/.gitkeep
+!saida/lote/.gitkeep
+
+.venv/
+venv/

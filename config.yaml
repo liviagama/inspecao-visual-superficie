@@ -1,0 +1,40 @@
+# Configuração default do pipeline. Argumentos de linha de comando sobrescrevem
+# os valores daqui (ver cli.py).
+
+dataset:
+  largura: 640
+  altura: 480
+  n_imagens: 60
+  seed: 42
+  defeitos_por_imagem: [1, 4]  # intervalo [min, max]
+
+preproc:
+  clahe_clip_limit: 2.0
+  clahe_tile_grid: 8
+  denoise_kernel: 3
+
+segmentacao:
+  threshold_block_size: 25
+  threshold_c: 5
+  canny_limiar_baixo: 40
+  canny_limiar_alto: 120
+  kernel_abertura: 3
+  kernel_fechamento: 5
+
+features:
+  area_minima: 15  # abaixo disso é ruído residual pós-morfologia, ver features.py
+
+classificador_regras:
+  circularidade_furo: 0.75
+  solidez_furo: 0.85
+  aspecto_risco: 3.0
+  circularidade_risco_max: 0.3
+  solidez_mancha_max: 0.85
+
+avaliacao:
+  iou_min_match: 0.3
+
+relatorio:
+  area_severidade_media: 200   # px, acima disso severidade sobe de baixa pra media
+  area_severidade_alta: 800    # px, acima disso severidade sobe pra alta
+  limite_area_reprovacao: 800  # px, qualquer defeito acima disso reprova o lote
