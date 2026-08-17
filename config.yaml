@@ -27,11 +27,12 @@ features:
   area_minima: 40  # abaixo disso é ruído residual pós-morfologia, ver features.py
 
 classificador_regras:
-  circularidade_furo: 0.75
-  solidez_furo: 0.85
-  aspecto_risco: 3.0
-  circularidade_risco_max: 0.3
-  solidez_mancha_max: 0.85
+  # calibrados comparando as características dos contornos batidos com o
+  # ground truth em 60 imagens sintéticas, ver classificador.py:ParametrosRegras
+  circularidade_furo: 0.65
+  solidez_furo: 0.88
+  area_maxima_furo: 700.0
+  aspecto_risco: 1.8
 
 avaliacao:
   iou_min_match: 0.3

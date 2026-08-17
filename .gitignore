@@ -6,6 +6,8 @@ __pycache__/
 # dados gerados em runtime, não versionados
 dados/sinteticas/*.png
 dados/ground_truth/*.json
+dados/teste_imagens/*.png
+dados/teste_gt/*.json
 dados/modelo_ml.pkl
 saida/overlays/*.png
 saida/lote/*.csv

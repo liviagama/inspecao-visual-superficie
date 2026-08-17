@@ -127,6 +127,12 @@ def gerar_imagem(
     imagem = gerar_textura_base(largura, altura, rng)
     n_defeitos = int(rng.integers(n_defeitos_min, n_defeitos_max + 1))
     ground_truth = []
+    # TODO: não checa sobreposição entre defeitos. Se dois caírem na mesma
+    # região, a área gravada no ground truth do primeiro pode não bater mais
+    # com os pixels finais depois que o segundo é desenhado por cima. Com
+    # 1-4 defeitos numa chapa de 640x480 isso é raro o suficiente pra não ter
+    # aparecido nos testes, mas seria o primeiro ajuste antes de aumentar a
+    # densidade de defeitos por imagem.
     for _ in range(n_defeitos):
         tipo = rng.choice(TIPOS_DEFEITO)
         defeito = inserir_defeito(imagem, tipo, rng)
