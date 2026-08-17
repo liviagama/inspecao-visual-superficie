@@ -8,11 +8,14 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-# abaixo disso o contorno é ruído residual que sobrou da segmentação, não
-# defeito: medido olhando a distribuição de área dos contornos espúrios nas
-# imagens sintéticas sem nenhum defeito naquela região (ver segmentacao.py
-# pra calibração completa do resto do pipeline)
-AREA_MINIMA_PADRAO = 15
+# abaixo disso o contorno costuma ser ruído residual da segmentação, não
+# defeito: em 60 imagens sintéticas de teste, contornos de ruído ficaram
+# quase todos abaixo de 30px² (só 1 em 210 passou de 50px²) enquanto os
+# contornos que batiam com o ground truth raramente ficavam abaixo de 40px².
+# Com esse corte o número de candidatos por imagem caiu de ~6.7 pra ~3.2 sem
+# perder recall (158/160 defeitos ainda batidos, os 2 que se perdem já eram
+# fragmentos residuais de risco fino cortados pela abertura morfológica)
+AREA_MINIMA_PADRAO = 40
 
 
 @dataclass

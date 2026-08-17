@@ -24,7 +24,7 @@ segmentacao:
   kernel_fechamento: 9
 
 features:
-  area_minima: 15  # abaixo disso é ruído residual pós-morfologia, ver features.py
+  area_minima: 40  # abaixo disso é ruído residual pós-morfologia, ver features.py
 
 classificador_regras:
   circularidade_furo: 0.75
