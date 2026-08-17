@@ -14,12 +14,14 @@ preproc:
   denoise_kernel: 3
 
 segmentacao:
-  threshold_block_size: 25
-  threshold_c: 5
+  # valores calibrados testando contra o ground truth sintético, ver
+  # comentário em segmentacao.py:segmentar
+  threshold_block_size: 35
+  threshold_c: 15
   canny_limiar_baixo: 40
   canny_limiar_alto: 120
   kernel_abertura: 3
-  kernel_fechamento: 5
+  kernel_fechamento: 9
 
 features:
   area_minima: 15  # abaixo disso é ruído residual pós-morfologia, ver features.py
