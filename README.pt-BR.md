@@ -185,9 +185,6 @@ que a fronteira aprendida não cabe numa frase.
 
 ## Aviso
 
-Projeto pessoal de estudo, escrito do zero. Não contém código, dados ou
-parâmetros de nenhuma equipe ou organização da qual eu tenha feito parte.
-
 Documentação técnica detalhada de cada decisão do pipeline (o que é CLAHE, a
 diferença entre threshold global e adaptativo, o que abertura e fechamento
 morfológico fazem, como se calcula IoU, por que falso negativo custa mais
