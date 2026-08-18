@@ -188,9 +188,6 @@ learned boundary doesn't fit in one sentence.
 
 ## Disclaimer
 
-Personal study project, written from scratch. It contains no code, data, or
-parameters from any team or organization I've been part of.
-
 Detailed technical documentation of every non-obvious pipeline decision (what
 CLAHE is, the difference between global and adaptive thresholding, what
 morphological opening and closing do, how IoU is computed, why a false
