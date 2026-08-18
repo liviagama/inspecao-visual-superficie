@@ -1,45 +1,47 @@
+**English** | [Português](README.pt-BR.md)
+
 # inspecao-visual-superficie
 
-Pipeline de visão computacional para detectar e classificar defeitos (riscos,
-corrosão, furos de rebite ausentes) em imagens de superfícies metálicas.
+Computer vision pipeline to detect and classify defects (scratches, corrosion,
+missing rivet holes) on metal surface images.
 
-![licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)
+![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)
 
-## O problema
+## The problem
 
-Inspeção visual de superfície é, na maioria das linhas de produção, ainda
-feita por um inspetor humano passando os olhos em cada peça sob luz
-controlada. É lento, caro em escala e sujeito a fadiga: depois de horas
-repetindo a mesma tarefa, a atenção cai e defeitos pequenos passam. Na
-indústria aeronáutica isso pesa mais que em quase qualquer outro setor —
-um risco superficial não detectado numa chapa estrutural, ou um rebite que
-deveria estar lá e não está, é o tipo de coisa que se conecta direto a
-fadiga de material e integridade estrutural. Automatizar a primeira triagem
-não substitui o inspetor, mas dá a ele uma pré-seleção consistente, que não
-cansa e que sinaliza exatamente onde olhar com mais atenção.
+On most production lines, surface visual inspection is still done by a human
+inspector eyeballing each part under controlled lighting. It's slow, expensive
+at scale, and prone to fatigue: after hours of repeating the same task,
+attention drops and small defects slip through. In the aerospace industry this
+matters more than in almost any other sector — an undetected surface scratch
+on a structural panel, or a rivet that should be there and isn't, is the kind
+of thing that connects directly to fatigue cracking and structural integrity.
+Automating the first pass doesn't replace the inspector, but it gives them a
+consistent pre-screening that doesn't get tired and points out exactly where
+to look more closely.
 
-Este projeto é a minha tentativa de estudar esse problema com as mesmas
-técnicas de visão computacional que uso em outro contexto (visão embarcada
-para drones, código fechado da equipe onde participo), aplicadas do zero a
-um domínio diferente e com dataset próprio.
+This project is my attempt to study that problem with the same computer
+vision techniques I use in a different context (embedded vision for drones,
+closed-source code from the team I'm part of), applied from scratch to a
+different domain and with my own dataset.
 
 ## Pipeline
 
 ```mermaid
 flowchart LR
-    A["Imagem de entrada<br/>(arquivo, pasta ou lote)"] --> B["Pré-processamento<br/>cinza + denoise + CLAHE"]
-    B --> C["Segmentação<br/>threshold adaptativo + Canny + morfologia"]
-    C --> D["Extração de candidatos<br/>contornos + características geométricas"]
-    D --> E{"Classificação"}
-    E -->|regras| F["Classificador por regras"]
-    E -->|ml| G["Classificador ML<br/>árvore de decisão / regressão logística"]
-    F --> H["Avaliação contra ground truth<br/>IoU, precisão, recall, F1"]
+    A["Input image<br/>(single file, folder, or batch)"] --> B["Preprocessing<br/>grayscale + denoise + CLAHE"]
+    B --> C["Segmentation<br/>adaptive threshold + Canny + morphology"]
+    C --> D["Candidate extraction<br/>contours + geometric features"]
+    D --> E{"Classification"}
+    E -->|rules| F["Rule-based classifier"]
+    E -->|ml| G["ML classifier<br/>decision tree / logistic regression"]
+    F --> H["Evaluation against ground truth<br/>IoU, precision, recall, F1"]
     G --> H
-    F --> I["Overlay + relatório de lote<br/>CSV e Markdown"]
+    F --> I["Detection overlay + batch report<br/>CSV and Markdown"]
     G --> I
 ```
 
-## Instalação
+## Installation
 
 ```bash
 python3 -m venv .venv
@@ -48,146 +50,149 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-## Uso
+## Usage
 
-Todos os comandos abaixo foram testados de ponta a ponta neste repositório.
+Every command below has been tested end to end in this repository.
 
 ```bash
-# gera um dataset sintético de treino (imagens + ground truth em JSON)
+# generate a synthetic training dataset (images + ground truth in JSON)
 inspecao gerar-dataset --n-imagens 60 --seed 42
 
-# gera um dataset separado, nunca visto pelo modelo, só pra avaliação honesta
+# generate a separate dataset the model never sees, for an honest evaluation
 inspecao gerar-dataset --n-imagens 40 --seed 999 \
     --saida-imagens dados/teste_imagens --saida-gt dados/teste_gt
 
-# treina o baseline de ML sobre o dataset de treino
+# train the ML baseline on the training dataset
 inspecao treinar-ml --tipo-modelo arvore
 
-# roda o pipeline completo numa pasta de imagens, gera overlay e relatório de lote
+# run the full pipeline on a folder of images, produce overlays and a batch report
 inspecao inspecionar dados/teste_imagens --classificador ml --modelo-ml dados/modelo_ml.pkl
 
-# avalia regras e ML contra o ground truth do dataset de teste
+# evaluate rules and ML against the test dataset's ground truth
 inspecao avaliar --dataset-imagens dados/teste_imagens --dataset-gt dados/teste_gt \
     --modelo-ml dados/modelo_ml.pkl
 
-# mede tempo por estágio do pipeline
+# measure time per pipeline stage
 inspecao benchmark dados/teste_imagens --n-imagens 40
 ```
 
-A configuração default (thresholds de segmentação, limiares do classificador
-por regras, limites de severidade etc.) fica em `config.yaml`. Todo argumento
-de linha de comando sobrescreve o valor correspondente do arquivo.
+The CLI itself is in Portuguese (subcommands, flags, config keys) since that's
+the language I wrote and tested this project in — the commands above are
+copy-pasteable as-is. Default configuration (segmentation thresholds,
+rule-classifier limits, severity cutoffs, etc.) lives in `config.yaml`. Every
+CLI argument overrides the corresponding value from the file.
 
-## Regras vs. machine learning
+## Rules vs. machine learning
 
-As duas abordagens foram avaliadas no mesmo conjunto de teste (`seed=999`,
-40 imagens, **nunca usado no treino do modelo de ML**) — comparação honesta,
-sem vazamento de dados:
+Both approaches were evaluated on the same test set (`seed=999`, 40 images,
+**never used to train the ML model**) — an honest comparison, no data leakage:
 
-| classe | Precisão (regras) | Recall (regras) | F1 (regras) | Precisão (ML) | Recall (ML) | F1 (ML) |
+| class | Precision (rules) | Recall (rules) | F1 (rules) | Precision (ML) | Recall (ML) | F1 (ML) |
 |---|---|---|---|---|---|---|
 | furo_ausente | 0.806 | 0.962 | 0.877 | 0.962 | 0.962 | 0.962 |
 | mancha | 0.512 | 0.733 | 0.603 | 0.683 | 0.933 | 0.789 |
 | risco | 0.593 | 0.593 | 0.593 | 0.735 | 0.926 | 0.820 |
-| IoU médio | 0.853 | | | 0.853 | | |
+| mean IoU | 0.853 | | | 0.853 | | |
 
-(tabela completa, incluindo matriz de confusão, em `avaliacao/resultados.md`)
+(full table, including the confusion matrix, in `avaliacao/resultados.md`)
 
-O classificador por regras acerta bem `furo_ausente` — é a forma mais
-restritiva (redondo, sólido e pequeno) e a regra geométrica que escrevi pra
-ela captura isso quase perfeito. Onde ele apanha é separando `risco` de
-`mancha`: a regra usa razão de aspecto da bounding box pra achar riscos, mas
-um risco desenhado perto de 45° tem bbox quase quadrada — aspecto perto de 1,
-igual a uma mancha pequena. Nos meus dados sintéticos isso acontece em mais
-da metade dos riscos (ângulo é sorteado uniformemente). O classificador de ML
-usa as seis características em conjunto em vez de aplicar limiares fixos um
-de cada vez, e isso é exatamente onde ele ganha: recall de risco sobe de
-0.593 pra 0.926. IoU médio é idêntico entre as duas abordagens porque a
-localização (segmentação + contorno) é a mesma nos dois casos — só muda o
-rótulo atribuído a cada candidato.
+The rule-based classifier does well on `furo_ausente` (missing rivet hole) —
+it's the most constrained shape (round, solid, small) and the geometric rule
+I wrote for it captures that almost perfectly. Where it struggles is telling
+`risco` (scratch) apart from `mancha` (corrosion stain): the rule uses the
+bounding-box aspect ratio to spot scratches, but a scratch drawn close to 45°
+has a nearly square bounding box — aspect ratio close to 1, same as a small
+stain. In my synthetic data this happens for more than half the scratches
+(the angle is sampled uniformly). The ML classifier uses all six features
+jointly instead of applying fixed thresholds one at a time, and that's exactly
+where it wins: scratch recall goes from 0.593 to 0.926. Mean IoU is identical
+between the two approaches because localization (segmentation + contour) is
+the same in both cases — only the label assigned to each candidate changes.
 
-## Antes e depois
+## Before and after
 
-| Original | Com overlay de detecção |
+| Original | With detection overlay |
 |---|---|
-| ![antes](docs/img/exemplo_antes.png) | ![depois](docs/img/exemplo_depois.png) |
+| ![before](docs/img/exemplo_antes.png) | ![after](docs/img/exemplo_depois.png) |
 
-Azul = furo_ausente, laranja = risco, vermelho = mancha. A área em pixels vem
-direto do contorno detectado, não de uma estimativa.
+Blue = furo_ausente (missing rivet hole), orange = risco (scratch), red =
+mancha (corrosion stain). The pixel area comes directly from the detected
+contour, not an estimate.
 
-## Desempenho
+## Performance
 
-Medido com `inspecao benchmark`, média sobre 40 imagens de 640x480,
-execução single-thread (sem paralelismo entre imagens):
+Measured with `inspecao benchmark`, averaged over 40 images at 640x480,
+single-threaded (no parallelism across images):
 
-| estágio | tempo médio |
+| stage | average time |
 |---|---|
-| pré-processamento | 0.81 ms |
-| segmentação | 3.82 ms |
-| extração de características | 0.87 ms |
-| **total** | **5.51 ms/imagem** |
+| preprocessing | 0.81 ms |
+| segmentation | 3.82 ms |
+| feature extraction | 0.87 ms |
+| **total** | **5.51 ms/image** |
 
-Throughput aproximado: **~180 imagens/s** num núcleo.
+Approximate throughput: **~180 images/s** on one core.
 
-Hardware usado: AMD Ryzen 7 7735HS (desktop/notebook, x86_64), Ubuntu 22.04,
-Python 3.10. Não testei em hardware embarcado de verdade (ver limitações
-abaixo), mas o custo dominante é a segmentação (adaptiveThreshold + Canny +
-morfologia, todas operações O(n) na imagem), então a ordem de grandeza deve
-se manter razoável mesmo num núcleo bem mais fraco que um Ryzen de notebook.
+Hardware used: AMD Ryzen 7 7735HS (desktop/laptop, x86_64), Ubuntu 22.04,
+Python 3.10. I haven't tested this on real embedded hardware (see
+limitations below), but the dominant cost is segmentation (adaptiveThreshold
++ Canny + morphology, all O(n) operations on the image), so the order of
+magnitude should hold reasonably well even on a core much weaker than a
+notebook Ryzen.
 
-## Limitações e próximos passos
+## Limitations and next steps
 
-- **Dataset é sintético.** Defeito real tem variabilidade de textura,
-  iluminação e forma que meu gerador não modela: corrosão real não é um
-  conjunto de círculos sobrepostos, risco real não tem espessura constante
-  ao longo do comprimento. Os números de precisão/recall aqui medem o
-  pipeline contra a distribuição que eu mesma desenhei, não contra a
-  variabilidade do mundo real.
-- **Segmentação ainda gera bastante ruído de fundo.** Mesmo depois de
-  calibrar os parâmetros do threshold adaptativo (ver comentário em
-  `segmentacao.py`), sobra em média mais candidatos por imagem do que
-  defeitos de verdade, o que derruba a precisão de ambos os classificadores.
-  Um passo de rejeição binária "é defeito ou não" antes da classificação por
-  tipo provavelmente ajudaria mais que qualquer ajuste fino nos dois
-  classificadores atuais.
-- **Riscos quase-diagonais confundem as duas abordagens**, o classificador
-  de regras mais que o de ML (ver seção acima). Adicionar uma característica
-  invariante a rotação (por exemplo, razão de eixos de uma elipse ajustada
-  ao contorno, em vez do aspecto da bounding box) é o próximo passo óbvio
-  pro classificador por regras.
-- Não testei em hardware embarcado real (Raspberry Pi, Jetson etc.), só
-  estimei a partir do benchmark em desktop.
-- O gerador de dataset não verifica sobreposição entre defeitos na mesma
-  imagem (ver TODO em `dataset.py`).
+- **The dataset is synthetic.** Real-world defects have texture, lighting,
+  and shape variability my generator doesn't model: real corrosion isn't a
+  set of overlapping circles, a real scratch doesn't have constant thickness
+  along its length. The precision/recall numbers here measure the pipeline
+  against the distribution I designed myself, not against real-world
+  variability.
+- **Segmentation still produces a fair amount of background noise.** Even
+  after calibrating the adaptive threshold parameters (see the comment in
+  `segmentacao.py`), on average there are more candidates per image than
+  actual defects, which drags down precision for both classifiers. A binary
+  "is this a defect or not" rejection step before per-type classification
+  would probably help more than any amount of fine-tuning on the two current
+  classifiers.
+- **Near-diagonal scratches confuse both approaches**, the rule-based one
+  more than the ML one (see the section above). Adding a rotation-invariant
+  feature (for example, the axis ratio of an ellipse fitted to the contour,
+  instead of the bounding-box aspect ratio) is the obvious next step for the
+  rule-based classifier.
+- I haven't tested this on real embedded hardware (Raspberry Pi, Jetson,
+  etc.), only extrapolated from the desktop benchmark.
+- The dataset generator doesn't check for overlap between defects in the
+  same image (see the TODO in `dataset.py`).
 
-## O que aprendi
+## What I learned
 
-Escrever o gerador sintético foi a parte que mais me ensinou algo que eu não
-esperava: quase todo o tempo de calibração do projeto não foi ajustar o
-classificador, foi ajustar a segmentação pra ela não devolver a textura de
-fundo inteira como "candidato a defeito". Com `threshold_c` baixo (o valor
-"de manual" da documentação do OpenCV) a máscara binária saía com mais de
-20% da imagem em branco, pura textura da chapa sintética. Isso me deixou bem
-mais cético em relação a tutorial de visão computacional que mostra o
-resultado só numa imagem "bonita" — o comportamento em ruído de fundo real
-(ou, no meu caso, ruído de textura sintética) é o que decide se o pipeline
-inteiro é usável.
+Writing the synthetic generator was the part that taught me something I
+didn't expect: almost none of the project's calibration time went into
+tuning the classifier — it went into tuning segmentation so it wouldn't
+return the entire background texture as a "defect candidate." With a low
+`threshold_c` (the "textbook" value from OpenCV's docs), the binary mask came
+out with more than 20% of the image white, pure texture from the synthetic
+plate. That left me a lot more skeptical of computer vision tutorials that
+only show results on one "pretty" image — behavior on real background noise
+(or, in my case, synthetic texture noise) is what decides whether the whole
+pipeline is actually usable.
 
-A outra coisa que ficou clara comparando regras com ML lado a lado: regras
-geométricas são interpretáveis e fáceis de justificar (dá pra explicar em
-uma frase por que algo foi classificado como furo), mas cada regra nova pra
-cobrir um caso de borda aumenta a chance de quebrar outro caso que já
-funcionava. O classificador de ML não precisa desse malabarismo porque
-aprende a fronteira de decisão nas seis dimensões ao mesmo tempo — o preço é
-que a fronteira aprendida não cabe numa frase.
+The other thing that became clear comparing rules and ML side by side:
+geometric rules are interpretable and easy to justify (you can explain in one
+sentence why something was classified as a hole), but every new rule added to
+cover an edge case increases the odds of breaking another case that already
+worked. The ML classifier doesn't need that juggling because it learns the
+decision boundary across all six dimensions at once — the price is that the
+learned boundary doesn't fit in one sentence.
 
-## Aviso
+## Disclaimer
 
-Projeto pessoal de estudo, escrito do zero. Não contém código, dados ou
-parâmetros de nenhuma equipe ou organização da qual eu tenha feito parte.
+Personal study project, written from scratch. It contains no code, data, or
+parameters from any team or organization I've been part of.
 
-Documentação técnica detalhada de cada decisão do pipeline (o que é CLAHE, a
-diferença entre threshold global e adaptativo, o que abertura e fechamento
-morfológico fazem, como se calcula IoU, por que falso negativo custa mais
-caro que falso positivo num cenário de inspeção de segurança) está em
-[`ESTUDO.md`](ESTUDO.md).
+Detailed technical documentation of every non-obvious pipeline decision (what
+CLAHE is, the difference between global and adaptive thresholding, what
+morphological opening and closing do, how IoU is computed, why a false
+negative costs more than a false positive in a safety-inspection scenario) is
+in [`ESTUDO.md`](ESTUDO.md) *(Portuguese only)*.
