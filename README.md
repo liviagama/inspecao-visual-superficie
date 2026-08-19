@@ -119,6 +119,38 @@ Blue = furo_ausente (missing rivet hole), orange = risco (scratch), red =
 mancha (corrosion stain). The pixel area comes directly from the detected
 contour, not an estimate.
 
+## Error analysis
+
+`mancha` has the lowest precision of the three classes (0.683 with ML, 0.512
+with rules — see the table above). That's not just a number: below are two
+real failures pulled straight from the evaluation run on the test set
+(`seed=999`), not staged for the screenshot.
+
+**False positive** — `dados/teste_imagens/img_0034.png`, ML classifier:
+
+![false positive: an extra mancha detection with no matching defect](docs/img/erro_falso_positivo.png)
+
+Segmentation split one real stain into two disconnected contours. The top
+piece (solid red) matched the ground truth and became the correct detection;
+the bottom piece (dashed magenta) has no ground truth of its own and was
+reported as an extra, nonexistent `mancha`. This is the background-noise
+problem named in Limitations below: more candidates per image than actual
+defects.
+
+**False negative** — `dados/teste_imagens/img_0013.png`, ML classifier:
+
+![false negative: a real mancha broken into fragments too small to match](docs/img/erro_falso_negativo.png)
+
+Here the fragmentation went further: a single 2983 px² stain broke into four
+small disconnected pieces (colored boxes), none reaching the 0.3 IoU
+threshold against the full ground-truth region. The defect is visually
+present in the detections, but scores as entirely missed because
+segmentation never reconstructs it as one connected blob.
+
+Same root cause on both sides — segmentation fragmenting a defect region
+instead of returning one contour — which is exactly why the fix proposed in
+Limitations targets segmentation, not the classifiers.
+
 ## Performance
 
 Measured with `inspecao benchmark`, averaged over 40 images at 640x480,

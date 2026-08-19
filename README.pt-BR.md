@@ -117,6 +117,38 @@ rótulo atribuído a cada candidato.
 Azul = furo_ausente, laranja = risco, vermelho = mancha. A área em pixels vem
 direto do contorno detectado, não de uma estimativa.
 
+## Análise de erro
+
+`mancha` é a classe com pior precisão das três (0,683 com ML, 0,512 com
+regras — ver tabela acima). Isso não é só número: abaixo estão dois erros
+reais tirados direto da avaliação no conjunto de teste (`seed=999`), não
+montados pra ilustração.
+
+**Falso positivo** — `dados/teste_imagens/img_0034.png`, classificador ML:
+
+![falso positivo: uma deteccao extra de mancha sem defeito correspondente](docs/img/erro_falso_positivo.png)
+
+A segmentação quebrou uma única mancha real em dois contornos separados. O
+pedaço de cima (vermelho, sólido) bateu com o ground truth e virou a
+detecção correta; o de baixo (magenta, tracejado) não tem ground truth
+próprio e foi reportado como uma `mancha` extra que não existe. É o mesmo
+problema de ruído de fundo citado nas limitações abaixo: mais candidatos por
+imagem do que defeitos de verdade.
+
+**Falso negativo** — `dados/teste_imagens/img_0013.png`, classificador ML:
+
+![falso negativo: uma mancha real fragmentada em pedacos pequenos demais pra bater com o ground truth](docs/img/erro_falso_negativo.png)
+
+Aqui a fragmentação foi mais longe: uma única mancha de 2983 px² se quebrou
+em quatro pedaços pequenos e desconectados (caixas coloridas), nenhum deles
+alcançando o limiar de IoU 0,3 contra a região inteira do ground truth. O
+defeito está visualmente presente nas detecções, mas conta como totalmente
+perdido porque a segmentação nunca reconstrói ele como um blob conectado só.
+
+Mesma causa raiz nos dois lados — segmentação fragmentando a região do
+defeito em vez de devolver um contorno só — e é exatamente por isso que o
+ajuste proposto nas limitações mira a segmentação, não os classificadores.
+
 ## Desempenho
 
 Medido com `inspecao benchmark`, média sobre 40 imagens de 640x480,
