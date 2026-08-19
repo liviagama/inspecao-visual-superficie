@@ -14,6 +14,12 @@ _COR_POR_TIPO = {
 }
 _COR_PADRAO = (0, 255, 0)
 
+# cores usadas só na ilustração de erro de avaliação (docs/img/erro_*.png),
+# não no overlay normal de inspeção. Padronizadas pra não significar coisas
+# diferentes em figuras diferentes:
+COR_GT_NAO_DETECTADO = (255, 0, 255)     # magenta: defeito real que nenhuma detecção achou
+COR_DETECCAO_INCORRETA = (255, 255, 0)   # ciano: detecção sem defeito real correspondente
+
 _FONTE = cv2.FONT_HERSHEY_SIMPLEX
 _ESCALA_FONTE = 0.6
 _ESPESSURA_TEXTO = 2
@@ -51,6 +57,47 @@ def _desenhar_rotulo(imagem: np.ndarray, texto: str, x: int, y: int, cor: tuple,
     cv2.rectangle(imagem, (caixa[0], caixa[1]), (caixa[2], caixa[3]), _COR_FUNDO_ROTULO, -1)
     cv2.putText(imagem, texto, (x1, y1), _FONTE, _ESCALA_FONTE, cor, _ESPESSURA_TEXTO, cv2.LINE_AA)
     ocupados.append(caixa)
+
+
+def cor_da_classe(tipo: str) -> tuple:
+    """Cor (BGR) usada pra uma classe de defeito no overlay normal — azul/laranja/vermelho."""
+    return _COR_POR_TIPO.get(tipo, _COR_PADRAO)
+
+
+def _linha_tracejada(imagem: np.ndarray, pt1: tuple, pt2: tuple, cor: tuple, espessura: int = 2, traco: int = 9, vao: int = 7) -> None:
+    pt1 = np.array(pt1, dtype=float)
+    pt2 = np.array(pt2, dtype=float)
+    dist = np.linalg.norm(pt2 - pt1)
+    if dist == 0:
+        return
+    direcao = (pt2 - pt1) / dist
+    passo = traco + vao
+    d = 0.0
+    while d < dist:
+        ini = pt1 + direcao * d
+        fim = pt1 + direcao * min(d + traco, dist)
+        cv2.line(imagem, tuple(ini.astype(int)), tuple(fim.astype(int)), cor, espessura, cv2.LINE_AA)
+        d += passo
+
+
+def desenhar_marcacao_erro(
+    imagem: np.ndarray, bbox: tuple, cor: tuple, rotulo: str, ocupados: list[tuple] | None = None
+) -> None:
+    """Marca uma região de erro de avaliação (falso positivo ou falso negativo) com um
+    retângulo tracejado e um rótulo curto em ASCII (sem acento — a fonte do cv2.putText
+    não suporta acentuação).
+
+    Usada só na geração das figuras de análise de erro da documentação
+    (`docs/img/erro_falso_positivo.png`, `docs/img/erro_falso_negativo.png`); não faz
+    parte do overlay de inspeção normal (`desenhar_overlay`).
+    """
+    x, y, w, h = bbox
+    x1, y1, x2, y2 = x - 6, y - 6, x + w + 6, y + h + 6
+    _linha_tracejada(imagem, (x1, y1), (x2, y1), cor)
+    _linha_tracejada(imagem, (x2, y1), (x2, y2), cor)
+    _linha_tracejada(imagem, (x2, y2), (x1, y2), cor)
+    _linha_tracejada(imagem, (x1, y2), (x1, y1), cor)
+    _desenhar_rotulo(imagem, rotulo, x1, y1 - 8, cor, ocupados if ocupados is not None else [])
 
 
 def desenhar_overlay(imagem: np.ndarray, deteccoes: list[dict]) -> np.ndarray:

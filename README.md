@@ -124,24 +124,34 @@ contour, not an estimate.
 `mancha` has the lowest precision of the three classes (0.683 with ML, 0.512
 with rules — see the table above). Below are two real failures pulled
 straight from the evaluation run on the test set (`seed=999`), not staged for
-the screenshot. The dashed magenta outline marks the defect or detection
-involved in the error; the `FP`/`FN` tag identifies which one it is.
+the screenshot.
+
+In both figures, a solid contour in the class color (blue = furo_ausente,
+orange = risco, red = mancha) marks a valid detection; a dashed **magenta**
+outline marks a real defect (ground truth) that no detection reached; a
+dashed **cyan** outline marks a detection with no matching real defect.
 
 **False positive** — `dados/teste_imagens/img_0034.png`, ML classifier:
 
 ![false positive: a real mancha split into two pieces, one of them turning into an extra detection with no matching defect](docs/img/erro_falso_positivo.png)
 
 *Segmentation split one real stain into two pieces. The top one became the
-correct detection; the bottom one was left over as a fragment with no real
-defect of its own.*
+correct detection; the bottom one (dashed cyan) was left over as a fragment
+with no real defect of its own.*
 
 **False negative** — `dados/teste_imagens/img_0013.png`, ML classifier:
 
-![false negative: a real mancha broken into fragments too small to match the ground truth](docs/img/erro_falso_negativo.png)
+![false negative: a real mancha broken into fragments too small to match the ground truth, with fragments classified as both risco and mancha](docs/img/erro_falso_negativo.png)
 
-*A real 2983px stain that segmentation fragmented into small pieces, each
-classified individually; no fragment reached IoU >= 0.3 against the real
-defect, so the whole defect ended up undetected.*
+*A real 2983px stain (dashed magenta) that segmentation fragmented into four
+small, irregular pieces; none reached IoU >= 0.3 against the real defect, so
+the whole stain ended up undetected. The fragments' classification was also
+wrong, but not for the obvious reason: the trained decision tree decides
+mainly on circularity and solidity, not on aspect ratio (the criterion that
+defines `risco` in the rule-based classifier) — the fragment with the
+highest aspect ratio of the four is precisely the one that came out as
+`mancha` (red), while the other three, with higher solidity, fell on the
+`risco` (orange) side of the tree.*
 
 Both cases share the same root cause: fragmentation in the segmentation
 step, not a classifier mistake. That's exactly what motivates the first item

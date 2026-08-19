@@ -121,25 +121,35 @@ direto do contorno detectado, não de uma estimativa.
 
 `mancha` é a classe com pior precisão das três (0,683 com ML, 0,512 com
 regras — ver tabela acima). Abaixo estão dois erros reais tirados direto da
-avaliação no conjunto de teste (`seed=999`), não montados pra ilustração. O
-tracejado magenta marca o defeito ou a detecção envolvida no erro; o rótulo
-`FP`/`FN` identifica qual dos dois é.
+avaliação no conjunto de teste (`seed=999`), não montados pra ilustração.
+
+Nas duas figuras, contorno sólido na cor da classe (azul = furo_ausente,
+laranja = risco, vermelho = mancha) marca uma detecção válida; tracejado
+**magenta** marca um defeito real (ground truth) que nenhuma detecção
+alcançou; tracejado **ciano** marca uma detecção sem nenhum defeito real
+correspondente.
 
 **Falso positivo** — `dados/teste_imagens/img_0034.png`, classificador ML:
 
 ![falso positivo: uma mancha real dividida em dois pedaços, um deles virando uma deteccao extra sem defeito correspondente](docs/img/erro_falso_positivo.png)
 
 *A segmentação quebrou uma única mancha real em duas partes. A parte de cima
-virou a detecção correta; a de baixo sobrou como fragmento sem defeito real
-correspondente.*
+virou a detecção correta; a de baixo (tracejado ciano) sobrou como fragmento
+sem defeito real correspondente.*
 
 **Falso negativo** — `dados/teste_imagens/img_0013.png`, classificador ML:
 
-![falso negativo: uma mancha real fragmentada em pedacos pequenos demais pra bater com o ground truth](docs/img/erro_falso_negativo.png)
+![falso negativo: uma mancha real fragmentada em pedacos pequenos demais pra bater com o ground truth, com fragmentos classificados como risco e mancha](docs/img/erro_falso_negativo.png)
 
-*Mancha real de 2983px que a segmentação fragmentou em pedaços pequenos,
-classificados individualmente; nenhum fragmento atingiu IoU ≥ 0,3 com o
-defeito real, então o defeito inteiro ficou sem detecção.*
+*Mancha real de 2983px (tracejado magenta) que a segmentação fragmentou em
+quatro pedaços pequenos e irregulares; nenhum atingiu IoU ≥ 0,3 com o
+defeito real, então a mancha inteira ficou sem detecção. A classificação
+dos fragmentos também saiu errada, mas não pelo motivo mais óbvio: a árvore
+de decisão treinada decide principalmente por circularidade e solidez, não
+pela razão de aspecto (o critério que define `risco` no classificador de
+regras) — o fragmento de maior razão de aspecto dos quatro foi justamente o
+que virou `mancha` (vermelho), enquanto os outros três, com solidez mais
+alta, caíram do lado `risco` (laranja) da árvore.*
 
 Os dois casos têm a mesma causa raiz: fragmentação na etapa de segmentação,
 não erro do classificador. É exatamente o que motiva o primeiro item de
